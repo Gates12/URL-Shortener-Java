@@ -1,0 +1,237 @@
+
+# URL Shortener API Documentation
+
+This document will help you understand how the **URL Shortener** system works. We will explain the project in a simple and structured way, so even someone new to programming can follow along!
+
+---
+
+## What is a URL Shortener?
+
+A **URL Shortener** is a tool that takes a long web address (like `https://www.example.com`) and converts it into a short, easy-to-share link (like `http://localhost:8080/api/r/abc123`).
+
+This project allows you to shorten URLs and redirect to the original URL when the shortened link is accessed.
+
+---
+
+## Project Structure
+
+The project is divided into multiple parts:
+
+- **Controller**: Handles HTTP requests (what the user interacts with).
+- **Service**: Contains the logic of how URLs are shortened, tracked, and cleaned.
+- **DTO**: Defines the data (request and response formats).
+- **Configuration**: Manages settings like CORS (which allows the frontend to interact with the backend).
+- **Main Application**: Starts the application.
+
+Here's the project structure:
+
+```
+src
+└── main
+    ├── java
+    │   └── com.gates.url_shortener
+    │       ├── config
+    │       │   └── CorsConfig.java
+    │       ├── controller
+    │       │   └── UrlShortenerController.java
+    │       ├── dto
+    │       │   ├── UrlShortenRequest.java
+    │       │   └── UrlShortenResponse.java
+    │       ├── service
+    │       │   └── UrlShortenerService.java
+    │       └── UrlShortenerApplication.java
+    ├── resources
+    │   └── application.properties
+```
+
+---
+
+## Key Components
+
+### 1. **UrlShortenerController** (Handles User Requests)
+
+This is where the main operations of shortening URLs and redirecting to the original URLs are done.
+
+#### Endpoints:
+
+- **POST /api/shorten**: Shortens a long URL and returns a shortened version.
+- **GET /api/r/{shortKey}**: Redirects to the original long URL using the shortened key.
+- **GET /api/access-count/{shortKey}**: Returns how many times the shortened URL has been accessed.
+
+---
+
+### 2. **UrlShortenerService** (Business Logic)
+
+The service class contains the main logic for:
+
+- Validating URLs.
+- Tracking how many times a short URL has been accessed.
+- Setting expiration times for shortened URLs.
+- Cleaning up expired URLs.
+
+#### Key Functions:
+
+- **isValidUrl**: Checks if a URL is valid.
+- **trackAccess**: Tracks how many times a URL has been accessed.
+- **setExpiration**: Sets the expiration time for a shortened URL.
+- **cleanExpiredUrls**: Cleans up expired URLs periodically.
+
+---
+
+### 3. **DTO Classes** (Data Transfer Objects)
+
+These classes define the structure of the data being sent and received through the API. They are used to convert data into a format that can be understood by the client and server.
+
+- **UrlShortenRequest**: Used when a user sends a request to shorten a URL. It contains the long URL.
+- **UrlShortenResponse**: Used to send back the shortened URL.
+
+---
+
+### 4. **CorsConfig** (Configuration)
+
+This file is used to set up **CORS** (Cross-Origin Resource Sharing). It tells the server which front-end apps are allowed to make requests to the back-end. In this case, we allow requests from `http://localhost:8080`.
+
+---
+
+## How Does the URL Shortener Work?
+
+### Step 1: Shorten a URL
+
+When you send a **POST request** to `/api/shorten` with a long URL in the request body, the server will:
+
+1. Check if the URL is valid.
+2. Check if it has already been shortened.
+3. If not, it generates a unique short key.
+4. It stores the mapping between the short key and the long URL.
+5. Returns the shortened URL.
+
+Example Request:
+```json
+POST /api/shorten
+{
+  "longUrl": "https://www.example.com"
+}
+```
+
+Example Response:
+```json
+{
+  "shortUrl": "http://localhost:8080/api/r/abc123"
+}
+```
+
+---
+
+### Step 2: Redirect to the Original URL
+
+When you visit a **GET request** to `/api/r/{shortKey}`, the server will:
+
+1. Look for the `shortKey` in the database (map).
+2. If it finds the mapping, it will **redirect** you to the original URL.
+3. If not, it returns a 404 error.
+
+Example Request:
+```json
+GET /api/r/abc123
+```
+
+Example Response:
+```json
+302 Found
+Location: https://www.example.com
+```
+
+---
+
+### Step 3: Get Access Count
+
+You can check how many times a short URL has been accessed by sending a **GET request** to `/api/access-count/{shortKey}`.
+
+Example Request:
+```json
+GET /api/access-count/abc123
+```
+
+Example Response:
+```json
+{
+  "accessCount": 10
+}
+```
+
+---
+
+## URL Expiration and Cleanup
+
+Each shortened URL is given an expiration time of **24 hours**. After that, the URL will be removed from the system.
+
+The server automatically cleans up expired URLs every 90 seconds using the `cleanExpiredUrls` method.
+
+---
+
+## How to Run the Project
+
+1. **Clone the Project**:
+   - Download or clone the repository from GitHub.
+
+2. **Install Dependencies**:
+   - Open a terminal and run the following command:
+   ```bash
+   mvn clean install
+   ```
+
+3. **Run the Application**:
+   - Use the following command to start the server:
+   ```bash
+   mvn spring-boot:run
+   ```
+
+4. **Access the API**:
+   - The API will be accessible at `http://localhost:8080`.
+
+---
+
+## Testing the Application
+
+1. **Postman / CURL**:
+   - You can use tools like Postman or CURL to test the API.
+
+   Example to shorten a URL:
+   ```bash
+   curl -X POST http://localhost:8080/api/shorten -H "Content-Type: application/json" -d '{"longUrl":"https://www.example.com"}'
+   ```
+
+   Example to access the original URL:
+   ```bash
+   curl http://localhost:8080/api/r/abc123
+   ```
+
+---
+
+## Swagger Documentation
+
+You can also use **Swagger** to interact with the API in a user-friendly way. Swagger automatically generates API documentation and provides a UI to test the API.
+
+- Swagger UI will be available at: `http://localhost:8080/swagger-ui.html`.
+
+---
+
+## Common Error Responses
+
+- **400 Bad Request**: This occurs when you try to shorten an invalid URL.
+- **404 Not Found**: This happens if you try to access a short URL that doesn’t exist or has expired.
+
+Example of Error Response:
+```json
+{
+  "error": "Invalid URL"
+}
+```
+
+---
+
+## Conclusion
+
+This **URL Shortener** project provides a simple way to shorten URLs, track their usage, and handle expiration. The project is designed to be easy to use, with clear endpoints for shortening URLs and retrieving access counts. It also automatically cleans up expired URLs to keep the system efficient.
+
+Let me know if you need any further clarification!
